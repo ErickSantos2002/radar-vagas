@@ -109,6 +109,21 @@ def cmd_aplicada(args: argparse.Namespace) -> int:
     return _mudar_status(_abrir(), args.id, "aplicada")
 
 
+def cmd_web(args: argparse.Namespace) -> int:
+    """Sobe a triagem local e abre no navegador."""
+    import threading
+    import webbrowser
+
+    from radar_vagas.web import criar_app
+
+    url = f"http://127.0.0.1:{args.porta}/"
+    print(f"triagem em {url}   (ctrl+c para parar)")
+    if not args.sem_navegador:
+        threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+    criar_app(CAMINHO_DB).run(host="127.0.0.1", port=args.porta, debug=False)
+    return 0
+
+
 def cmd_relatorio(args: argparse.Namespace) -> int:
     con = _abrir()
     total = total_coletadas(con)
@@ -145,6 +160,11 @@ def main() -> int:
     pa = sub.add_parser("aplicada", help="marca uma vaga como aplicada")
     pa.add_argument("id", type=int)
     pa.set_defaults(func=cmd_aplicada)
+
+    pw = sub.add_parser("web", help="abre a triagem no navegador")
+    pw.add_argument("--porta", type=int, default=5111)
+    pw.add_argument("--sem-navegador", action="store_true")
+    pw.set_defaults(func=cmd_web)
 
     prel = sub.add_parser("relatorio", help="escreve a nota da semana no vault")
     prel.add_argument("--semana", help="ex: 2026-W31 (default: semana atual)")

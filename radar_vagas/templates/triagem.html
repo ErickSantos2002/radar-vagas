@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triagem — radar de vagas</title>
+<style>
+  :root {
+    /* Fundo quase-preto quente (marrom, não azulado) para conviver com o tema
+       dourado do desktop. Rejeitar não tem cor própria: a vaga apenas recua. */
+    --fundo:   #14120e;
+    --painel:  #1b1813;
+    --linha:   #2c2820;
+    --linha-f: #3d3729;
+    --texto:   #e8e2d4;
+    --suave:   #968d7d;
+    --fraco:   #6b6455;
+    --ouro:    #d9a441;
+    --sim:     #7fb069;
+
+    --sans: "Cantarell", "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono: ui-monospace, "JetBrains Mono", "DejaVu Sans Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--texto);
+    font: 15px/1.55 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── cabeçalho ─────────────────────────────────────────────── */
+  header {
+    display: flex; align-items: baseline; gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--linha);
+  }
+  .marca {
+    font-weight: 700; letter-spacing: -0.01em;
+    margin-right: auto;
+  }
+  .marca span { color: var(--fraco); font-weight: 400; }
+
+  /* A assinatura: o contador que drena. */
+  .contador { display: flex; align-items: baseline; gap: .5rem; }
+  .contador b {
+    font-size: 2.6rem; font-weight: 300; line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ouro);
+    transition: color .3s;
+  }
+  .contador small { color: var(--suave); font-size: .8rem; }
+  .contador.zerado b { color: var(--sim); }
+
+  nav { display: flex; gap: .25rem; }
+  nav a {
+    color: var(--suave); text-decoration: none;
+    font-size: .8rem; padding: .3rem .6rem;
+    border: 1px solid transparent; border-radius: 3px;
+  }
+  nav a:hover { color: var(--texto); border-color: var(--linha-f); }
+  nav a[aria-current] { color: var(--fundo); background: var(--ouro); font-weight: 600; }
+
+  /* ── dois painéis ──────────────────────────────────────────── */
+  main {
+    display: grid;
+    grid-template-columns: minmax(280px, 30%) 1fr;
+    height: calc(100vh - 66px);
+  }
+
+  /* lista densa */
+  .lista { overflow-y: auto; border-right: 1px solid var(--linha); }
+  .item {
+    display: block; width: 100%; text-align: left;
+    background: none; border: 0; border-bottom: 1px solid var(--linha);
+    border-left: 3px solid transparent;
+    color: inherit; font: inherit; cursor: pointer;
+    padding: .6rem 1rem .65rem;
+  }
+  .item:hover { background: var(--painel); }
+  .item[aria-selected="true"] {
+    background: var(--painel);
+    border-left-color: var(--ouro);
+  }
+  .item:focus-visible { outline: 2px solid var(--ouro); outline-offset: -2px; }
+  .item h2 {
+    margin: 0; font-size: .9rem; font-weight: 600; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .item p {
+    margin: .2rem 0 0; font-size: .75rem; color: var(--suave);
+    font-family: var(--mono);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .item.decidida { opacity: .35; }
+  .item.decidida[aria-selected="true"] { opacity: .6; }
+
+  /* documento arejado */
+  /* o padding-bottom precisa passar da barra fixa de decisão, senão o último
+     conteúdo fica escondido atrás dela */
+  .detalhe { overflow-y: auto; padding: 2.5rem 3rem 8rem; max-width: 78ch; }
+  .detalhe .fonte {
+    font-family: var(--mono); font-size: .75rem; color: var(--ouro);
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+  .detalhe h1 {
+    margin: .4rem 0 .2rem; font-size: 1.9rem; font-weight: 600;
+    line-height: 1.15; letter-spacing: -0.02em;
+  }
+  .detalhe .empresa { margin: 0; color: var(--suave); font-size: 1rem; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: .4rem;
+    margin: 1.2rem 0; padding-top: 1.2rem;
+    border-top: 1px solid var(--linha);
+  }
+  .chip {
+    font-family: var(--mono); font-size: .72rem;
+    padding: .2rem .5rem; border: 1px solid var(--linha-f);
+    border-radius: 2px; color: var(--suave);
+  }
+  .chip.skill { color: var(--texto); border-color: var(--ouro); }
+  .descricao { color: #d3ccbd; }
+  .descricao :is(h1,h2,h3) { font-size: 1rem; margin: 1.6rem 0 .4rem; }
+  .descricao p, .descricao li { margin: .5rem 0; }
+  .descricao a { color: var(--ouro); }
+  .abrir {
+    display: inline-block; margin-top: .6rem;
+    color: var(--ouro); font-size: .85rem;
+  }
+
+  /* ── barra de decisão ──────────────────────────────────────── */
+  .decidir {
+    position: fixed; bottom: 0; right: 0; left: 30%;
+    display: flex; align-items: center; gap: .75rem;
+    padding: .8rem 3rem;
+    background: linear-gradient(transparent, var(--fundo) 45%);
+  }
+  .decidir button {
+    font: inherit; font-size: .9rem; cursor: pointer;
+    padding: .5rem 1.1rem; border-radius: 3px;
+    border: 1px solid var(--linha-f);
+    background: var(--painel); color: var(--texto);
+  }
+  .decidir button:hover { border-color: var(--suave); }
+  .decidir button:focus-visible { outline: 2px solid var(--ouro); outline-offset: 2px; }
+  /* só o afirmativo ganha cor */
+  .decidir .sim { border-color: var(--sim); color: var(--sim); font-weight: 600; }
+  .decidir .sim:hover { background: var(--sim); color: var(--fundo); }
+  .decidir kbd {
+    font-family: var(--mono); font-size: .78em;
+    border: 1px solid var(--linha-f); border-bottom-width: 2px;
+    border-radius: 3px; padding: 0 .3em; color: var(--suave);
+  }
+  .atalhos { margin-left: auto; color: var(--fraco); font-size: .75rem; }
+
+  .vazio { padding: 4rem 3rem; color: var(--suave); }
+  .vazio strong { display: block; color: var(--texto); font-size: 1.3rem; margin-bottom: .4rem; }
+
+  @media (max-width: 780px) {
+    main { grid-template-columns: 1fr; height: auto; }
+    .lista { max-height: 40vh; border-right: 0; border-bottom: 1px solid var(--linha); }
+    .detalhe { padding: 1.5rem 1.2rem 6rem; }
+    .decidir { left: 0; padding: .8rem 1.2rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">radar de vagas <span>· triagem</span></div>
+  <nav>
+    {% for chave, rotulo in [('pendente','pendentes'), ('interessante','fazem sentido'), ('descartada','descartadas')] %}
+    <a href="?status={{ chave }}" {% if status == chave %}aria-current="page"{% endif %}>
+      {{ rotulo }} {{ contagens.get(chave, 0) }}
+    </a>
+    {% endfor %}
+  </nav>
+  <div class="contador {% if restam == 0 %}zerado{% endif %}" id="contador">
+    <b id="restam">{{ restam }}</b><small>por decidir</small>
+  </div>
+</header>
+
+{% if vagas %}
+<main>
+  <div class="lista" role="tablist" aria-label="Vagas">
+    {% for v in vagas %}
+    <button class="item" role="tab" data-id="{{ v.id }}" data-i="{{ loop.index0 }}"
+            aria-selected="{{ 'true' if loop.first else 'false' }}">
+      <h2>{{ v.titulo }}</h2>
+      <p>{{ v.empresa or 'sem empresa' }} · {{ v.fonte }}</p>
+    </button>
+    {% endfor %}
+  </div>
+
+  <div class="detalhe" id="detalhe" tabindex="-1"></div>
+
+  <div class="decidir">
+    <button class="sim" id="btn-sim">Faz sentido <kbd>s</kbd></button>
+    <button id="btn-nao">Não faz <kbd>n</kbd></button>
+    <button id="btn-abrir">Abrir anúncio <kbd>enter</kbd></button>
+    <span class="atalhos"><kbd>j</kbd> <kbd>k</kbd> navegar</span>
+  </div>
+</main>
+
+<script id="dados" type="application/json">{{ vagas | tojson }}</script>
+<script>
+  const vagas = JSON.parse(document.getElementById('dados').textContent);
+  const lista = document.querySelector('.lista');
+  const painel = document.getElementById('detalhe');
+  const restam = document.getElementById('restam');
+  let atual = 0;
+
+  const esc = (t) => { const d = document.createElement('div'); d.textContent = t ?? ''; return d.innerHTML; };
+
+  function regiao(v) {
+    if (v.geo_ok === 1) return v.geo_raw || 'aceita Brasil';
+    if (v.geo_ok === null) return 'elegibilidade a confirmar';
+    return v.geo_raw || 'restrita';
+  }
+
+  function pintar() {
+    const v = vagas[atual];
+    if (!v) return;
+    document.querySelectorAll('.item').forEach((el, i) =>
+      el.setAttribute('aria-selected', i === atual ? 'true' : 'false'));
+    lista.children[atual]?.scrollIntoView({ block: 'nearest' });
+
+    const chips = [
+      `<span class="chip">${esc(v.fonte)}</span>`,
+      `<span class="chip">${esc(regiao(v))}</span>`,
+      v.salario_raw ? `<span class="chip">${esc(v.salario_raw)}</span>` : '',
+      ...(v.skills || []).map(s => `<span class="chip skill">${esc(s)}</span>`),
+    ].join('');
+
+    painel.innerHTML = `
+      <div class="fonte">${esc(v.fonte)}</div>
+      <h1>${esc(v.titulo)}</h1>
+      <p class="empresa">${esc(v.empresa || 'empresa não informada')}</p>
+      <div class="meta">${chips}</div>
+      <div class="descricao">${v.descricao || '<p>Sem descrição. Abra o anúncio.</p>'}</div>
+      <a class="abrir" href="${esc(v.url)}" target="_blank" rel="noopener">Abrir o anúncio original →</a>`;
+    painel.scrollTop = 0;
+  }
+
+  async function decidir(decisao) {
+    const v = vagas[atual];
+    if (!v) return;
+    const r = await fetch(`/vagas/${v.id}/decidir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decisao }),
+    });
+    if (!r.ok) { alert('Não foi possível gravar a decisão.'); return; }
+    const dados = await r.json();
+    restam.textContent = dados.restam;
+    document.getElementById('contador').classList.toggle('zerado', dados.restam === 0);
+    lista.children[atual].classList.add('decidida');
+    if (atual < vagas.length - 1) { atual++; pintar(); }
+  }
+
+  function mover(passo) {
+    atual = Math.min(vagas.length - 1, Math.max(0, atual + passo));
+    pintar();
+  }
+
+  lista.addEventListener('click', (e) => {
+    const item = e.target.closest('.item');
+    if (item) { atual = Number(item.dataset.i); pintar(); }
+  });
+
+  document.getElementById('btn-sim').onclick = () => decidir('sim');
+  document.getElementById('btn-nao').onclick = () => decidir('nao');
+  document.getElementById('btn-abrir').onclick = () =>
+    window.open(vagas[atual].url, '_blank', 'noopener');
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'j') { mover(1); e.preventDefault(); }
+    else if (k === 'k') { mover(-1); e.preventDefault(); }
+    else if (k === 's') { decidir('sim'); e.preventDefault(); }
+    else if (k === 'n') { decidir('nao'); e.preventDefault(); }
+    else if (e.key === 'Enter') { window.open(vagas[atual].url, '_blank', 'noopener'); e.preventDefault(); }
+  });
+
+  pintar();
+</script>
+
+{% else %}
+<div class="vazio">
+  <strong>Fila limpa.</strong>
+  {% if status == 'pendente' %}
+    Nenhuma vaga esperando decisão. Rode <code>radar-vagas coletar</code> para buscar as novas.
+  {% else %}
+    Nada com esse status ainda.
+  {% endif %}
+</div>
+{% endif %}
+
+</body>
+</html>
