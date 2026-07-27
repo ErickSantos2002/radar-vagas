@@ -55,6 +55,40 @@ def test_vagas_da_fixture_passam_no_filtro_de_cargo() -> None:
     )
 
 
+def test_pagina_ate_o_fim_ignorando_o_total_mentiroso(monkeypatch) -> None:
+    """`pagination.total` vem limitado ao `limit`, então não serve de parada.
+
+    Com limit=100 a API responde total=100 mesmo havendo 138 vagas. Se o loop
+    confiar nesse campo, para na primeira página e trunca em silêncio.
+    """
+    from radar_vagas.fetch import gupy
+
+    def _vaga(i: int) -> dict:
+        return {
+            "id": i,
+            "name": "Engenheiro de Dados",
+            "jobUrl": f"https://g.test/{i}",
+            "careerPageName": "Acme",
+            "workplaceType": "remote",
+            "country": "Brasil",
+        }
+
+    paginas = {0: [_vaga(i) for i in range(100)], 100: [_vaga(i) for i in range(100, 138)]}
+    chamadas: list[int] = []
+
+    def falso_get_json(url: str) -> dict:
+        offset = int(url.split("offset=")[1])
+        chamadas.append(offset)
+        return {"data": paginas.get(offset, []), "pagination": {"total": 100}}
+
+    monkeypatch.setattr(gupy, "get_json", falso_get_json)
+    monkeypatch.setattr(gupy, "TERMOS", ("engenheiro de dados",))
+
+    vagas = gupy.buscar_gupy()
+    assert len(vagas) == 138, "parou na primeira página por confiar no total"
+    assert chamadas == [0, 100]
+
+
 def test_ids_unicos() -> None:
     ids = [v.external_id for v in parse_gupy(_fixture())]
     assert len(ids) == len(set(ids))

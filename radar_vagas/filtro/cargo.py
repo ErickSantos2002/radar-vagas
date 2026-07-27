@@ -11,7 +11,11 @@ _TITULO = re.compile(
     # português — o Gupy publica quase tudo assim, e sem isto as vagas
     # brasileiras seriam todas descartadas. O `(?:\(a\))?` cobre a forma
     # "Engenheiro(a) de Dados", comum em anúncio brasileiro.
+    # `eng\.?\s+de\s+dados` cobre a abreviação "Eng de Dados", que aparece em
+    # vaga real no Gupy e não casaria com `engenheir\w*`.
     r"engenheir\w*(?:\(a\))?\s+de\s+dados|"
+    r"eng\.?\s+de\s+dados|"
+    r"arquitetura\s+de\s+dados|"
     r"engenharia\s+de\s+dados|"
     r"arquitet\w*(?:\(a\))?\s+de\s+dados|"
     r"plataforma\s+de\s+dados"

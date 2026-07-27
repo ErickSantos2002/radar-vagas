@@ -12,9 +12,15 @@ BASE = "https://employability-portal.gupy.io/api/v1/jobs"
 PAGINA = 100
 
 # A busca é por texto no nome da vaga, então precisa de várias formulações.
+# Deliberadamente não inclui o termo genérico "dados": ele traz 138 vagas, mas
+# a maioria é Analista e Cientista de Dados, que são outros cargos. O foco é
+# Data Engineer. "eng de dados" está aqui porque a abreviação aparece em vaga
+# real e a busca por texto não a encontra pelo termo por extenso.
 TERMOS = (
     "engenheiro de dados",
+    "eng de dados",
     "engenharia de dados",
+    "arquitetura de dados",
     "data engineer",
     "analytics engineer",
     "arquiteto de dados",
@@ -86,9 +92,12 @@ def buscar_gupy() -> list[VagaBruta]:
                     vistos.add(v.external_id)
                     vagas.append(v)
 
-            paginacao = payload.get("pagination") or {}
-            total = paginacao.get("total", 0)
-            offset += PAGINA
-            if offset >= total or not payload.get("data"):
+            # `pagination.total` vem limitado ao `limit` da requisição — com
+            # limit=100 ele responde total=100 mesmo havendo 138. Confiar nele
+            # trunca a busca em silêncio. O fim da paginação é uma página que
+            # volta com menos itens que o pedido.
+            recebidas = len(payload.get("data") or [])
+            if recebidas < PAGINA:
                 break
+            offset += PAGINA
     return vagas

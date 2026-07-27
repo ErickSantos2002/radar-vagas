@@ -29,6 +29,10 @@ def test_aprova_por_titulo(titulo: str) -> None:
         "Arquiteto de Dados",
         "11718371 - ENGENHEIRO DE DADOS SÊNIOR",
         "Engenheiro de Dados Sênior | Automações com IA | Azure",
+        # abreviação real vista no Gupy
+        "Eng de Dados Pl/Sr [AFIRMATIVA PARA MULHERES]",
+        "Eng. de Dados Sr - Certificado Databricks",
+        "Especialista de Arquitetura de Dados I",
     ],
 )
 def test_aprova_titulo_em_portugues(titulo: str) -> None:
