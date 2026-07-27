@@ -1,0 +1,80 @@
+# ─────────────────────────────────────────────────────────────
+# DADOS PESSOAIS — nunca versionar
+# ─────────────────────────────────────────────────────────────
+# Specs e notas de trabalho: contexto pessoal, fora do repo público
+docs/specs/
+docs/notas/
+
+perfil.yaml
+perfil.*.yaml
+cv/
+curriculo*
+curr[ií]culo*
+*_CV.*
+CV_*.*
+cover-letter*
+cover_letter*
+
+# Banco e dados coletados (contém descrições de vagas de terceiros)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+data/
+debug/
+
+# Relatórios gerados pelo radar (podem conter empresa/salário/faixa)
+relatorios/
+reports/
+*.report.md
+
+# ─────────────────────────────────────────────────────────────
+# SEGREDOS
+# ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+credentials*
+secrets*
+token*
+.claude/settings.local.json
+
+# ─────────────────────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# ─────────────────────────────────────────────────────────────
+# Airflow / dbt (Fase 6)
+# ─────────────────────────────────────────────────────────────
+airflow.db
+airflow-webserver.pid
+logs/
+target/
+dbt_packages/
+profiles.yml
+
+# ─────────────────────────────────────────────────────────────
+# Editor / SO
+# ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
