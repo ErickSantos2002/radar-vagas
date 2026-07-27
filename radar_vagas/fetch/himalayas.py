@@ -1,57 +1,44 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
-from radar_vagas.fetch.http import FonteIndisponivel, get_json
+from radar_vagas.fetch.http import get_text
+from radar_vagas.fetch.rss import parse_tolerante, texto, textos
 from radar_vagas.models import VagaBruta
 
-URL = "https://himalayas.app/jobs/api?limit=100"
+# A API pública (`/jobs/api`) devolve no máximo 20 vagas por chamada, ignora
+# `limit` e não aceita nenhum filtro de categoria — com `totalCount` em ~96 mil,
+# achar vagas de dados por ali exigiria milhares de requisições. O RSS geral
+# devolve ~100 itens numa chamada, então é a fonte melhor apesar de não trazer
+# faixa salarial (o scoring extrai da descrição na Fase 4).
+URL = "https://himalayas.app/jobs/rss"
 FONTE = "himalayas"
 
 
-def _iso(epoch: object) -> str | None:
-    """`pubDate` da Himalayas vem em epoch inteiro, não ISO."""
-    if isinstance(epoch, bool) or not isinstance(epoch, (int, float)):
-        return None
-    return datetime.fromtimestamp(epoch, tz=timezone.utc).isoformat()
-
-
-def _faixa(j: dict) -> str | None:
-    minimo, maximo = j.get("minSalary"), j.get("maxSalary")
-    if not minimo and not maximo:
-        return None
-    moeda = j.get("currency") or ""
-    periodo = j.get("salaryPeriod") or ""
-    return f"{moeda} {minimo}-{maximo} {periodo}".strip()
-
-
-def parse_himalayas(payload: dict) -> list[VagaBruta]:
+def parse_himalayas(xml_texto: str) -> list[VagaBruta]:
+    raiz = parse_tolerante(xml_texto, FONTE)
     vagas: list[VagaBruta] = []
-    for j in payload.get("jobs", []):
-        guid = j.get("guid")
-        titulo = j.get("title")
-        if not guid or not titulo:
+    for item in raiz.iterfind(".//item"):
+        titulo = texto(item, "title")
+        guid = texto(item, "guid") or texto(item, "link")
+        link = texto(item, "link") or guid
+        if not titulo or not guid or not link:
             continue
-        restricoes = j.get("locationRestrictions") or []
+        restricoes = textos(item, "locationRestriction")
         vagas.append(
             VagaBruta(
                 fonte=FONTE,
                 external_id=guid,
-                url=j.get("applicationLink") or guid,
+                url=link,
                 titulo=titulo,
-                empresa=j.get("companyName"),
+                empresa=texto(item, "companyName"),
                 geo_raw=", ".join(restricoes) if restricoes else None,
                 geo_confiavel=True,
-                publicado_em=_iso(j.get("pubDate")),
-                descricao=j.get("description") or j.get("excerpt"),
-                salario_raw=_faixa(j),
+                publicado_em=texto(item, "pubDate"),
+                descricao=texto(item, "encoded") or texto(item, "description"),
+                salario_raw=None,
             )
         )
     return vagas
 
 
 def buscar_himalayas() -> list[VagaBruta]:
-    payload = get_json(URL)
-    if not isinstance(payload, dict):
-        raise FonteIndisponivel("himalayas: payload não é objeto")
-    return parse_himalayas(payload)
+    return parse_himalayas(get_text(URL))

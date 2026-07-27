@@ -72,8 +72,17 @@ def test_wwr_separa_empresa_do_titulo() -> None:
 # ─────────────────────────── Himalayas ──────────────────────────
 
 
+def _him_xml(item_interno: str) -> str:
+    return (
+        '<?xml version="1.0"?><rss version="2.0"><channel>'
+        "<himalayasJobs:lastBuildDate>hoje</himalayasJobs:lastBuildDate>"
+        f"<item>{item_interno}</item>"
+        "</channel></rss>"
+    )
+
+
 def test_himalayas_normaliza() -> None:
-    vagas = parse_himalayas(_ler("himalayas.json"))
+    vagas = parse_himalayas((FIXTURES / "himalayas.xml").read_text())
     assert vagas
     v = vagas[0]
     assert v.fonte == "himalayas"
@@ -81,39 +90,35 @@ def test_himalayas_normaliza() -> None:
     assert v.external_id.startswith("http")
 
 
-def test_himalayas_junta_lista_de_restricoes() -> None:
-    payload = {
-        "jobs": [
-            {
-                "guid": "https://himalayas.app/x",
-                "title": "Data Engineer",
-                "companyName": "Acme",
-                "locationRestrictions": ["Brazil", "Argentina"],
-                "pubDate": 1785158945,
-                "description": "d",
-            }
-        ]
-    }
-    assert parse_himalayas(payload)[0].geo_raw == "Brazil, Argentina"
+def test_himalayas_rss_traz_muito_mais_que_a_api() -> None:
+    # A API pública trava em 20 por chamada; o RSS devolve ~100.
+    vagas = parse_himalayas((FIXTURES / "himalayas.xml").read_text())
+    assert len(vagas) > 50
 
 
-def test_himalayas_pubdate_epoch_vira_iso_e_lista_vazia_vira_none() -> None:
-    payload = {
-        "jobs": [
-            {
-                "guid": "https://himalayas.app/y",
-                "title": "Data Engineer",
-                "companyName": "Acme",
-                "locationRestrictions": [],
-                "pubDate": 1785158945,
-                "description": "d",
-            }
-        ]
-    }
-    v = parse_himalayas(payload)[0]
-    assert v.publicado_em is not None
-    assert v.publicado_em.startswith("2026-")
+def test_himalayas_junta_restricoes_repetidas() -> None:
+    xml = _him_xml(
+        "<title>Data Engineer</title>"
+        "<guid>https://himalayas.app/x</guid>"
+        "<link>https://himalayas.app/x</link>"
+        "<companyName>Acme</companyName>"
+        "<locationRestriction>Brazil</locationRestriction>"
+        "<locationRestriction>Argentina</locationRestriction>"
+    )
+    assert parse_himalayas(xml)[0].geo_raw == "Brazil, Argentina"
+
+
+def test_himalayas_sem_restricao_vira_none() -> None:
+    xml = _him_xml(
+        "<title>Data Engineer</title>"
+        "<guid>https://himalayas.app/y</guid>"
+        "<link>https://himalayas.app/y</link>"
+        "<companyName>Acme</companyName>"
+        "<pubDate>Mon, 27 Jul 2026 13:17:37 GMT</pubDate>"
+    )
+    v = parse_himalayas(xml)[0]
     assert v.geo_raw is None
+    assert v.publicado_em == "Mon, 27 Jul 2026 13:17:37 GMT"
 
 
 # ────────────────────────────── HN ──────────────────────────────

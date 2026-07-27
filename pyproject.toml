@@ -12,3 +12,10 @@ radar-vagas = "radar_vagas.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# Sem isto o Pyright resolve contra o Python do sistema e acusa
+# "Import could not be resolved" para requests, pytest e os módulos locais.
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+extraPaths = ["."]
