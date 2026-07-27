@@ -19,6 +19,30 @@ def test_aprova_por_titulo(titulo: str) -> None:
     assert plausivel_data_engineer(titulo, None) is True
 
 
+@pytest.mark.parametrize(
+    "titulo",
+    [
+        "Engenheiro de Dados SR",
+        "Engenheira de Dados Sênior",
+        "Engenheiro(a) de Dados Júnior (Data Engineer)",
+        "Engenharia de Dados - Pleno",
+        "Arquiteto de Dados",
+        "11718371 - ENGENHEIRO DE DADOS SÊNIOR",
+        "Engenheiro de Dados Sênior | Automações com IA | Azure",
+    ],
+)
+def test_aprova_titulo_em_portugues(titulo: str) -> None:
+    assert plausivel_data_engineer(titulo, None) is True
+
+
+@pytest.mark.parametrize(
+    "titulo",
+    ["Analista de Marketing", "Engenheiro Civil", "Professor de Fitdance"],
+)
+def test_reprova_portugues_fora_do_escopo(titulo: str) -> None:
+    assert plausivel_data_engineer(titulo, "Trabalhe conosco.") is False
+
+
 def test_aprova_por_stack_na_descricao() -> None:
     desc = (
         "You will build pipelines with Airflow, model data in dbt "

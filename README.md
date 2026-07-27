@@ -9,12 +9,13 @@ de tendência do mercado.
 
 ```console
 $ radar-vagas coletar
-coletadas    599
-aprovadas    15
+coletadas    662
+aprovadas    69
 
 fonte         coletadas  aprovadas
+gupy                 63         57
 remotive             36          7
-hn                  276          6
+hn                  276          3
 wwr                  87          2
 remoteok            100          0
 himalayas           100          0
@@ -42,11 +43,11 @@ mão, toda semana, para descartar 80% deles.
 Cinco estágios, com o trabalho caro no fim da fila:
 
 ```
-fetch     RemoteOK · Remotive · We Work Remotely · Himalayas · HN Who-is-hiring
+fetch     Gupy · RemoteOK · Remotive · We Work Remotely · Himalayas · HN
           API e RSS públicos — sem scraping, sem browser, sem CAPTCHA
    │
-filter    elegibilidade geográfica · dedupe · plausibilidade de cargo
-          determinístico, custo zero — derruba ~80% do volume
+filter    modalidade (100% remoto) · elegibilidade geográfica · dedupe ·
+          plausibilidade de cargo — determinístico, custo zero
    │
 score     LLM pontua 1-10 contra o perfil e extrai skills, senioridade,
           faixa salarial e modelo de contrato, em lotes de 20 vagas

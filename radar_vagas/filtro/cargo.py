@@ -4,9 +4,17 @@ import re
 
 _TITULO = re.compile(
     r"\b("
+    # inglês
     r"data\s+engineer|analytics\s+engineer|data\s+platform|"
     r"data\s+infra(structure)?|dataops|data\s+pipeline|"
-    r"etl\s+(developer|engineer)|data\s+warehouse\s+engineer"
+    r"etl\s+(developer|engineer)|data\s+warehouse\s+engineer|"
+    # português — o Gupy publica quase tudo assim, e sem isto as vagas
+    # brasileiras seriam todas descartadas. O `(?:\(a\))?` cobre a forma
+    # "Engenheiro(a) de Dados", comum em anúncio brasileiro.
+    r"engenheir\w*(?:\(a\))?\s+de\s+dados|"
+    r"engenharia\s+de\s+dados|"
+    r"arquitet\w*(?:\(a\))?\s+de\s+dados|"
+    r"plataforma\s+de\s+dados"
     r")\b",
     re.IGNORECASE,
 )

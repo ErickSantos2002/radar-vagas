@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Callable
 
+from radar_vagas.fetch.gupy import buscar_gupy
 from radar_vagas.fetch.himalayas import buscar_himalayas
 from radar_vagas.fetch.hn import buscar_hn
 from radar_vagas.fetch.remoteok import buscar_remoteok
@@ -15,6 +16,7 @@ log = logging.getLogger(__name__)
 __all__ = ["FONTES", "coletar_tudo"]
 
 FONTES: dict[str, Callable[[], list[VagaBruta]]] = {
+    "gupy": buscar_gupy,
     "remotive": buscar_remotive,
     "remoteok": buscar_remoteok,
     "wwr": buscar_wwr,
