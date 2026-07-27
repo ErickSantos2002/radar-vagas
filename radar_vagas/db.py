@@ -45,6 +45,17 @@ CREATE TABLE IF NOT EXISTS skills (
   PRIMARY KEY (vaga_id, skill)
 );
 
+-- As vagas reprovadas no filtro não são gravadas, então sem este registro o
+-- banco não sabe quantas foram coletadas e o relatório não pode falar de taxa
+-- de filtro sem inventar número.
+CREATE TABLE IF NOT EXISTS runs (
+  id         INTEGER PRIMARY KEY,
+  quando     TEXT NOT NULL,
+  coletadas  INTEGER NOT NULL,
+  aprovadas  INTEGER NOT NULL,
+  novas      INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_vagas_status ON vagas(status);
 CREATE INDEX IF NOT EXISTS idx_vagas_visto  ON vagas(visto_em);
 """
@@ -99,3 +110,23 @@ def inserir_vagas(
         inseridas += cur.rowcount
     con.commit()
     return inseridas
+
+
+def registrar_run(
+    con: sqlite3.Connection, coletadas: int, aprovadas: int, novas: int
+) -> None:
+    con.execute(
+        "INSERT INTO runs (quando, coletadas, aprovadas, novas) VALUES (?, ?, ?, ?)",
+        (datetime.now(timezone.utc).isoformat(), coletadas, aprovadas, novas),
+    )
+    con.commit()
+
+
+def total_coletadas(con: sqlite3.Connection, desde: str | None = None) -> int:
+    """Soma de vagas vistas nas fontes. 0 se nenhum run foi registrado."""
+    sql = "SELECT COALESCE(SUM(coletadas), 0) FROM runs"
+    params: tuple[str, ...] = ()
+    if desde:
+        sql += " WHERE quando >= ?"
+        params = (desde,)
+    return int(con.execute(sql, params).fetchone()[0])

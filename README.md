@@ -4,7 +4,21 @@ Pipeline de dados que agrega vagas remotas de cinco fontes públicas, resolve
 elegibilidade geográfica, extrai skills exigidas com LLM e produz um relatório
 de tendência do mercado.
 
-> 🚧 Em construção. Fase 1 de 7 — ver [Roadmap](#roadmap).
+> 🚧 Em construção. Coleta, filtro e relatório funcionando; pontuação por LLM
+> é a próxima fase — ver [Roadmap](#roadmap).
+
+```console
+$ radar-vagas coletar
+coletadas    599
+aprovadas    15
+
+fonte         coletadas  aprovadas
+remotive             36          7
+hn                  276          6
+wwr                  87          2
+remoteok            100          0
+himalayas           100          0
+```
 
 ## O problema
 
@@ -68,18 +82,41 @@ usa uma assinatura existente, não cobrança por token.
 
 | Fase | Escopo | Status |
 |---|---|---|
-| 1 | `fetch` + `filter` + schema | 🚧 em andamento |
-| 2 | `radar` v0 — skills por regex | ⏳ |
+| 1 | `fetch` + `filter` + schema | ✅ |
+| 2 | `radar` v0 — skills por regex, relatório semanal | ✅ |
 | 3 | Perfil configurável | ⏳ |
 | 4 | `score` via LLM | ⏳ |
 | 5 | `radar` v1 — tendência, salário | ⏳ |
 | 6 | Airflow + dbt | ⏳ |
 | 7 | Geração de documentos por vaga | ⏳ |
 
+## Uso
+
+```bash
+python -m venv .venv && .venv/bin/pip install -e .
+.venv/bin/radar-vagas coletar          # busca, filtra e grava
+.venv/bin/radar-vagas review --links   # lista as vagas pendentes
+.venv/bin/radar-vagas relatorio        # escreve a nota da semana
+.venv/bin/radar-vagas descartar 7      # marca como descartada
+.venv/bin/radar-vagas aplicada 13      # marca como aplicada
+```
+
 ## Configuração
 
+| Variável | Default | O que faz |
+|---|---|---|
+| `RADAR_DB` | `vagas.db` | Caminho do SQLite |
+| `RADAR_RELATORIOS` | `relatorios/` | Onde os relatórios semanais são escritos |
+
 O perfil usado na pontuação fica em `perfil.yaml`, que **não é versionado** —
-contém dados pessoais. Um `perfil.example.yaml` documenta o formato.
+contém dados pessoais. Os relatórios gerados também ficam fora do git: carregam
+empresa, faixa salarial e às vezes contato.
+
+## Testes
+
+```bash
+.venv/bin/pytest        # 95 testes, todos contra fixtures — nenhum toca a rede
+```
 
 ## Licença
 
