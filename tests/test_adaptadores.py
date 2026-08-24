@@ -1,8 +1,12 @@
 import json
 from pathlib import Path
 
+import pytest
+
+from radar_vagas.fetch.adzuna import buscar_adzuna, montar_url, parse_adzuna
 from radar_vagas.fetch.himalayas import parse_himalayas
 from radar_vagas.fetch.hn import escolher_thread, parse_hn
+from radar_vagas.fetch.http import FonteIndisponivel
 from radar_vagas.fetch.remoteok import parse_remoteok
 from radar_vagas.fetch.remotive import parse_remotive
 from radar_vagas.fetch.wwr import _separar, parse_wwr
@@ -172,3 +176,51 @@ def test_hn_escolhe_a_mais_recente() -> None:
 
 def test_hn_sem_thread_compativel_devolve_none() -> None:
     assert escolher_thread([{"objectID": "9", "title": "Ask HN: Who wants to be hired?"}]) is None
+
+
+# ─────────────────────────── Adzuna ───────────────────────────
+
+
+def test_adzuna_normaliza() -> None:
+    vagas = parse_adzuna(_ler("adzuna.json"))
+    assert vagas, "fixture da Adzuna veio vazia"
+    v = vagas[0]
+    assert v.fonte == "adzuna"
+    assert v.external_id == "5299034567"
+    assert v.url.startswith("http")
+    assert v.empresa == "Financeira Exemplo"
+    assert v.geo_raw == "São Paulo, São Paulo"
+    assert v.geo_confiavel is True
+
+
+def test_adzuna_ignora_vaga_sem_link() -> None:
+    ids = [v.external_id for v in parse_adzuna(_ler("adzuna.json"))]
+    assert "5299011111" not in ids, "vaga sem redirect_url não pode entrar"
+
+
+def test_adzuna_limpa_titulo() -> None:
+    vagas = {v.external_id: v for v in parse_adzuna(_ler("adzuna.json"))}
+    assert vagas["5299099999"].titulo == "Data Engineer (Remoto)"
+
+
+def test_adzuna_descarta_salario_estimado() -> None:
+    """Salário predito pelo modelo da Adzuna não é salário informado."""
+    vagas = {v.external_id: v for v in parse_adzuna(_ler("adzuna.json"))}
+    assert vagas["5299034567"].salario_raw is not None
+    assert vagas["5299099999"].salario_raw is None
+
+
+def test_adzuna_url_carrega_credenciais_e_termo() -> None:
+    url = montar_url("engenheiro de dados", "id123", "key456")
+    assert "app_id=id123" in url
+    assert "app_key=key456" in url
+    assert "engenheiro+de+dados" in url
+    assert url.startswith("https://api.adzuna.com/v1/api/jobs/br/search/1")
+
+
+def test_adzuna_sem_credencial_se_declara_indisponivel(monkeypatch) -> None:
+    """Sem chave a fonte não pode derrubar o run: ela se declara indisponível."""
+    monkeypatch.delenv("ADZUNA_APP_ID", raising=False)
+    monkeypatch.delenv("ADZUNA_APP_KEY", raising=False)
+    with pytest.raises(FonteIndisponivel):
+        buscar_adzuna()

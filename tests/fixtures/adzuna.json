@@ -1,0 +1,39 @@
+{
+  "count": 3,
+  "results": [
+    {
+      "id": "5299034567",
+      "title": "Engenheiro de Dados Júnior",
+      "redirect_url": "https://www.adzuna.com.br/land/ad/5299034567",
+      "company": {"display_name": "Financeira Exemplo"},
+      "location": {"display_name": "São Paulo, São Paulo", "area": ["Brasil", "São Paulo"]},
+      "created": "2026-08-20T14:03:11Z",
+      "description": "Atuar na manutenção do Data Warehouse, processos de ETL e ELT em Python e SQL...",
+      "salary_min": 5000,
+      "salary_max": 6500,
+      "salary_is_predicted": "0",
+      "contract_type": "permanent",
+      "category": {"label": "TI", "tag": "it-jobs"}
+    },
+    {
+      "id": "5299099999",
+      "title": "  Data Engineer (Remoto)  ",
+      "redirect_url": "https://www.adzuna.com.br/land/ad/5299099999",
+      "company": {"display_name": "Startup Exemplo"},
+      "location": {"display_name": "Brasil"},
+      "created": "2026-08-22T09:00:00Z",
+      "description": "Pipelines de dados em nuvem...",
+      "salary_min": 9000,
+      "salary_max": 12000,
+      "salary_is_predicted": "1"
+    },
+    {
+      "id": "5299011111",
+      "title": "Vaga sem link",
+      "company": {"display_name": "Sem Link Ltda"},
+      "location": {"display_name": "Recife, Pernambuco"},
+      "created": "2026-08-19T11:00:00Z",
+      "description": "Anúncio incompleto."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # radar-vagas
 
-Pipeline de dados que agrega vagas remotas de cinco fontes públicas, resolve
+Pipeline de dados que agrega vagas remotas de sete fontes públicas, resolve
 elegibilidade geográfica, extrai skills exigidas com LLM e produz um relatório
 de tendência do mercado.
 
@@ -43,7 +43,7 @@ mão, toda semana, para descartar 80% deles.
 Cinco estágios, com o trabalho caro no fim da fila:
 
 ```
-fetch     Gupy · RemoteOK · Remotive · We Work Remotely · Himalayas · HN
+fetch     Gupy · Adzuna · RemoteOK · Remotive · We Work Remotely · Himalayas · HN
           API e RSS públicos — sem scraping, sem browser, sem CAPTCHA
    │
 filter    modalidade (100% remoto) · elegibilidade geográfica · dedupe ·
@@ -91,6 +91,37 @@ usa uma assinatura existente, não cobrança por token.
 | 6a | Camada dbt: staging, marts e testes | ✅ |
 | 6b | Airflow orquestrando coleta + transformação | ⏳ |
 | 7 | Geração de documentos por vaga | ⏳ |
+
+## Fontes
+
+| Fonte | Cobertura | Chave |
+|---|---|---|
+| Gupy | Brasil. Responde por 57 das 61 aprovadas na coleta de 24/08/2026 | não |
+| Adzuna | Brasil, índice próprio | **sim**, gratuita |
+| RemoteOK · Remotive · WWR · Himalayas · HN | internacional | não |
+
+As fontes internacionais coletam muito e aprovam pouco: listam vagas que não
+contratam quem mora no Brasil. A Adzuna entra para cobrir o mesmo terreno da
+Gupy por outro caminho.
+
+### Credencial da Adzuna
+
+Gratuita e instantânea em [developer.adzuna.com](https://developer.adzuna.com):
+1.000 chamadas por mês, 25 por minuto. O radar gasta três por coleta, uma por
+termo de busca.
+
+```bash
+# no .env, fora do git
+ADZUNA_APP_ID=seu_app_id
+ADZUNA_APP_KEY=sua_app_key
+```
+
+Sem as variáveis a fonte se declara indisponível e o coletor segue com as
+outras: falta de credencial não derruba a coleta.
+
+Duas limitações do dado da Adzuna, documentadas no adaptador: a descrição vem
+truncada, o que rende menos extração de skills; e o salário às vezes é
+estimativa do modelo deles, descartada quando vem marcada como predita.
 
 ## Camada analítica (dbt)
 
