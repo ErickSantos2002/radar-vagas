@@ -11,7 +11,7 @@ models:
           - not_null
           - accepted_values:
               arguments:
-                values: [gupy, hn, remotive, remoteok, wwr, himalayas]
+                values: [gupy, adzuna, hn, remotive, remoteok, wwr, himalayas]
       - name: url
         data_tests: [not_null]
       - name: status

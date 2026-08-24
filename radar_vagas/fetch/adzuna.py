@@ -59,6 +59,19 @@ def montar_url(termo: str, app_id: str, app_key: str) -> str:
     return f"{BASE}?{urlencode(params)}"
 
 
+def _mascarar(texto: str, app_id: str, app_key: str) -> str:
+    """Tira a credencial de qualquer texto que vá para log ou terminal.
+
+    A exceção de rede carrega a URL que falhou, e a URL da Adzuna leva app_id e
+    app_key embutidos. Sem isto, um simples timeout imprime a chave na tela e a
+    grava no log da coleta.
+    """
+    for segredo in (app_key, app_id):
+        if segredo:
+            texto = texto.replace(segredo, "***")
+    return texto
+
+
 def _salario(j: dict) -> str | None:
     """Só devolve salário informado pela empresa, nunca o estimado."""
     if str(j.get("salary_is_predicted", "")) == "1":
@@ -108,7 +121,10 @@ def buscar_adzuna() -> list[VagaBruta]:
     vistos: set[str] = set()
 
     for termo in TERMOS:
-        payload = get_json(montar_url(termo, app_id, app_key))
+        try:
+            payload = get_json(montar_url(termo, app_id, app_key))
+        except FonteIndisponivel as exc:
+            raise FonteIndisponivel(_mascarar(str(exc), app_id, app_key)) from None
         if not isinstance(payload, dict):
             raise FonteIndisponivel(f"adzuna: payload não é objeto para '{termo}'")
         # Os termos se sobrepõem de propósito; deduplicar aqui evita entregar a

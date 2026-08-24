@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from radar_vagas.fetch.adzuna import buscar_adzuna, montar_url, parse_adzuna
+from radar_vagas.fetch.adzuna import (
+    _mascarar,
+    buscar_adzuna,
+    montar_url,
+    parse_adzuna,
+)
 from radar_vagas.fetch.himalayas import parse_himalayas
 from radar_vagas.fetch.hn import escolher_thread, parse_hn
 from radar_vagas.fetch.http import FonteIndisponivel
@@ -224,3 +229,12 @@ def test_adzuna_sem_credencial_se_declara_indisponivel(monkeypatch) -> None:
     monkeypatch.delenv("ADZUNA_APP_KEY", raising=False)
     with pytest.raises(FonteIndisponivel):
         buscar_adzuna()
+
+
+def test_adzuna_erro_nao_vaza_credencial() -> None:
+    """URL da Adzuna carrega a chave; mensagem de erro não pode carregar."""
+    bruto = "https://api.adzuna.com/v1/api/jobs/br/search/1?app_id=segredo1&app_key=segredo2: 429"
+    limpo = _mascarar(bruto, "segredo1", "segredo2")
+    assert "segredo1" not in limpo
+    assert "segredo2" not in limpo
+    assert "429" in limpo
