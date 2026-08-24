@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: mart_demanda_skills
+    description: Demanda por skill entre as vagas aprovadas, com recorte Brasil x exterior.
+    columns:
+      - name: skill
+        description: Skill normalizada em minúsculo.
+        data_tests: [unique, not_null]
+      - name: vagas
+        description: Vagas distintas que citam a skill.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                inclusive: true
+
+  - name: mart_vagas_por_fonte
+    description: Rendimento de cada fonte do radar depois do filtro geográfico.
+    columns:
+      - name: fonte
+        data_tests: [unique, not_null]
+      - name: vagas
+        data_tests: [not_null]

@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Cópia fiel das tabelas do SQLite operacional, escrita por
+      scripts/carregar_postgres.py. Nada é transformado aqui: se um valor está
+      estranho no raw, ele está estranho na origem.
+    schema: raw
+    tables:
+      - name: vagas
+        description: Uma linha por vaga aprovada no filtro geográfico.
+        loaded_at_field: "visto_em::timestamptz"
+        freshness:
+          warn_after: {count: 8, period: day}
+          error_after: {count: 21, period: day}
+      - name: skills
+        description: Par vaga/skill extraído da descrição por regex.
+      - name: runs
+        description: Uma linha por execução do coletor, com o funil de filtragem.
+      - name: scores
+        description: Pontuação por vaga. Vazia enquanto o estágio score não roda.
