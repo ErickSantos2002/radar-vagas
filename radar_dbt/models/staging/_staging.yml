@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_vagas
+    description: Uma linha por vaga aprovada, com tipos convertidos.
+    columns:
+      - name: vaga_id
+        data_tests: [unique, not_null]
+      - name: fonte
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [gupy, hn, remotive, remoteok, wwr, himalayas]
+      - name: url
+        data_tests: [not_null]
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [pendente, descartada, aplicada]
+      - name: visto_em
+        data_tests: [not_null]
+
+  - name: stg_skills
+    description: Par vaga/skill normalizado.
+    columns:
+      - name: skill
+        data_tests: [not_null]
+      - name: vaga_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_vagas')
+                field: vaga_id
+
+  - name: stg_coletas
+    description: Uma linha por execução do coletor, com o funil de filtragem.
+    columns:
+      - name: coleta_id
+        data_tests: [unique, not_null]
+      - name: coletadas
+        data_tests: [not_null]

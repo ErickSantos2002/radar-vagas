@@ -1,0 +1,23 @@
+# Banco analítico local do radar-vagas: destino da carga e alvo do dbt.
+# As credenciais vêm do .env (fora do git); .env.example mostra o formato.
+services:
+  postgres:
+    image: postgres:18
+    container_name: radar-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
+    volumes:
+      - radar_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  radar_pgdata:

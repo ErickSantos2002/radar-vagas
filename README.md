@@ -70,10 +70,10 @@ O estado vive num SQLite. Como as skills são gravadas por vaga com data, o rada
 | Camada | Ferramenta |
 |---|---|
 | Linguagem | Python 3.11+ |
-| Armazenamento | SQLite |
+| Armazenamento | SQLite (operacional) → PostgreSQL 18 (analítico) |
 | Extração de skills | Claude via CLI headless (`claude -p`) |
 | Orquestração | cron → **Airflow** (Fase 6) |
-| Transformações | SQL → **dbt** (Fase 6) |
+| Transformações | dbt 1.12 sobre PostgreSQL |
 | Testes | pytest, sobre fixtures de payloads reais |
 
 Sem dependência de serviço pago: todas as fontes são APIs públicas e a extração
@@ -88,8 +88,48 @@ usa uma assinatura existente, não cobrança por token.
 | 3 | Perfil configurável | ⏳ |
 | 4 | `score` via LLM | ⏳ |
 | 5 | `radar` v1 — tendência, salário | ⏳ |
-| 6 | Airflow + dbt | ⏳ |
+| 6a | Camada dbt: staging, marts e testes | ✅ |
+| 6b | Airflow orquestrando coleta + transformação | ⏳ |
 | 7 | Geração de documentos por vaga | ⏳ |
+
+## Camada analítica (dbt)
+
+O SQLite é o banco operacional da coleta: single-writer, local, sem servidor.
+A análise mora em outro lugar. O `scripts/carregar_postgres.py` copia as tabelas
+para o schema `raw` de um PostgreSQL em container, e o dbt transforma dali para
+frente. A separação é proposital: recarregar o analítico do zero nunca põe em
+risco o histórico de coleta.
+
+```
+vagas.db (SQLite)  →  raw.*  →  staging (views)  →  marts (tables)
+   coleta             cópia       tipos e             perguntas
+                      fiel        normalização        respondidas
+```
+
+| Camada | Modelos |
+|---|---|
+| staging | `stg_vagas`, `stg_skills`, `stg_coletas` |
+| marts | `mart_demanda_skills`, `mart_vagas_por_fonte` |
+
+### Como rodar
+
+```bash
+cp .env.example .env          # e troque a senha
+docker compose up -d          # PostgreSQL 18, exposto só em 127.0.0.1
+
+source .venv/bin/activate     # activate.fish no fish
+radar-vagas coletar           # popula o SQLite
+set -a; . ./.env; set +a
+python scripts/carregar_postgres.py
+
+cd radar_dbt
+dbt deps
+dbt build                     # roda modelos e testes
+dbt source freshness          # avisa se a última coleta envelheceu
+```
+
+O `profiles.yml` fica em `~/.dbt/`, fora do repositório: é onde o dbt guarda
+credencial. O `.env` também não é versionado; `.env.example` mostra o formato.
 
 ## Uso
 
