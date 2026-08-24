@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: int_vagas_nivel
+    description: >
+      Senioridade inferida por título, abertura da descrição e anos exigidos,
+      com a regra que decidiu registrada em `motivo`.
+    columns:
+      - name: vaga_id
+        data_tests: [unique, not_null]
+      - name: nivel
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [estagio, junior, pleno, senior, indefinido]
+      - name: motivo
+        data_tests: [not_null]

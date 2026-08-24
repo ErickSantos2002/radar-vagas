@@ -35,5 +35,12 @@ models:
     staging:
       +materialized: view
     # Marts é table: consulta repetida vale o custo de materializar.
+    intermediate:
+      +materialized: view
     marts:
       +materialized: table
+
+vars:
+  # Termos que identificam o cargo em si, para não confundir o nível do cargo
+  # com adjetivo solto no texto institucional da empresa.
+  cargo_regex: '(engenheir|analista|pessoa|profissional|desenvolvedor|cientista|data engineer|analytics engineer)'
